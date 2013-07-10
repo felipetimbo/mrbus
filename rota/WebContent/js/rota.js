@@ -11,3 +11,183 @@ L.tileLayer('http://{s}.tile.cloudmade.com/BC9A493B41014CAABB98F0471D759707/997/
 	attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>'
 }).addTo(map);
 
+/**
+ * Ao entrar na pagina de selecao de melhor rota
+ * */
+$(document).ready(function(){
+//	buscarTodasParadas();
+});
+
+var paradaIcon = L.icon({
+    iconUrl: 'images/bus-stop-green.png',
+
+    iconSize:     [30, 30], // size of the icon
+    iconAnchor:   [0, 30], // point of the icon which will correspond to marker's location
+    popupAnchor:  [11, -30] // point from which the popup should open relative to the iconAnchor
+});
+
+var paradaSelecionadaIcon = L.icon({
+	iconUrl: 'images/bus-stop-blue.png',
+
+	iconSize:     [30, 30], // size of the icon
+    iconAnchor:   [0, 30], // point of the icon which will correspond to marker's location
+    popupAnchor:  [11, -30] // point from which the popup should open relative to the iconAnchor
+});
+
+
+var layerGroupParadas;
+var paradasLayer = [];
+
+var featuresSelecionados = [];
+var layerGroupParadasSelecionadas;
+var paradasSelecionadasLayer = [];
+
+function onEachFeature(feature, layer) {
+	featuresSelecionados.push(feature);
+	var popupContent = "<p><b>Proximo a:</b> " + feature.properties.next_to + "<br />" +
+						"<b>Linhas da parada:</b> " + feature.properties.qtd_linhas + " linha(s) <br />" +
+						feature.properties.linhas_parada + "</p><br />" + 
+						"<input id='adicionarDestinoButton' type='button' class='btnAdd' onclick='adicionarParada("+ feature.properties.id +");' value='Adicionar' />";
+
+	if (feature.properties && feature.properties.popupContent) {
+		popupContent += feature.properties.popupContent;
+	}
+
+	layer.bindPopup(popupContent);
+}
+
+function onEachFeatureSelecionado(feature, layer) {
+	featuresSelecionados.push(feature);
+	var popupContent = "<p><b>Proximo a:</b> " + feature.properties.next_to + "<br />" +
+						"<b>Linhas da parada:</b> " + feature.properties.qtd_linhas + " linha(s) <br />" +
+						feature.properties.linhas_parada + "</p><br />";
+
+	if (feature.properties && feature.properties.popupContent) {
+		popupContent += feature.properties.popupContent;
+	}
+
+	layer.bindPopup(popupContent);
+}
+
+function onMapClick(e) {
+
+	if(typeof(layerGroupParadas) != "undefined"){
+		layerGroupParadas.clearLayers();
+		paradasLayer = [];
+	}
+	
+	var circle = L.circle([e.latlng.lat, e.latlng.lng], 330, {
+		color: 'green',
+		fillColor: '#f9f513',
+		fillOpacity: 0.5
+	});
+	
+	paradasLayer.push(circle);
+	
+	buscarParadasAdjacentes(e.latlng.lat, e.latlng.lng);
+}
+
+map.on('click', onMapClick);
+
+var geojsonMarkerOptions = {
+	    radius: 4,
+	    fillColor: "#0000ff",
+	    color: "#000",
+	    weight: 1,
+	    opacity: 1,
+	    fillOpacity: 0.8
+	};
+
+function buscarParadasAdjacentes(lat, lng){
+	
+		$.ajax({
+			  url: 'rota/buscarParadasAdjacentes',
+			  cache: false, 
+			  data: {latitude: lat, longitude: lng},
+			  success: function(data){
+				  plotOnMap(data);
+				  layerGroupParadas = L.layerGroup(paradasLayer).addTo(map);
+			}
+				
+		});
+}
+
+function buscarTodasParadas(){
+
+	$.ajax({
+		  url: 'rota/buscarTodasParadas',
+		  cache: false, 
+		  success: function(data){
+			  plotOnMap(data);
+		}
+			
+	});
+}
+
+function plotOnMap(data){
+	 for (var x=0; x < data.paradas.length; x++) {
+		  var parada = data.paradas[x];
+		  
+		  geo = new Object();
+		  geo = eval("("+parada.localizacao+")");
+		  
+		  var geojsonFeature = {
+				    "type": "Feature",
+				    "properties": {
+				    	"id": parada.id.toString(),
+				        "next_to": parada.pertoDe,
+				        "qtd_linhas": parada.qtdLinhas,
+				        "linhas_parada": parada.linhasParada
+				    },
+				    "geometry": geo
+				    
+				};
+		  
+		  var elementLayer = L.geoJson(geojsonFeature, {
+				 pointToLayer: function (feature, latlng) {
+					 	var coord = [latlng.lat, latlng.lng]; 
+					    var lnglat = L.GeoJSON.coordsToLatLng(coord, false);
+				        return L.marker(lnglat, {icon: paradaIcon}, geojsonMarkerOptions);
+				    },
+				    onEachFeature: onEachFeature
+			});
+		  
+		  paradasLayer.push(elementLayer);
+	  }
+}
+
+function adicionarParada(id){
+	
+	var featureSelecionado = new Object();
+	
+	for(var i=0; i<featuresSelecionados.length; i++){
+		var feature = featuresSelecionados[i];
+		if(feature.properties.id == id){
+			featureSelecionado = feature;
+			break;
+		}
+	}
+	
+	layerGroupParadas.clearLayers();
+	paradasLayer = [];
+	
+	 var elementLayer = L.geoJson(featureSelecionado, {
+		 pointToLayer: function (feature, latlng) {
+			 	var coord = [latlng.lat, latlng.lng]; 
+			    var lnglat = L.GeoJSON.coordsToLatLng(coord, false);
+		        return L.marker(lnglat, {icon: paradaSelecionadaIcon}, geojsonMarkerOptions);
+		    },
+		    onEachFeature: onEachFeatureSelecionado
+	});
+	 
+	 if(typeof(layerGroupParadasSelecionadas) != "undefined"){
+		 layerGroupParadasSelecionadas.clearLayers();
+	 }
+	 
+	 paradasSelecionadasLayer.push(elementLayer);
+	 
+	 layerGroupParadasSelecionadas = L.layerGroup(paradasSelecionadasLayer).addTo(map);
+	
+	
+}
+

@@ -4,8 +4,6 @@
     <persistence-unit name="rota" transaction-type="RESOURCE_LOCAL">
     <provider>org.hibernate.ejb.HibernatePersistence</provider>
     
-    <class>br.ufc.rota.entity.ParadaOnibus</class>
-    
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.spatial.dialect.postgis.PostgisDialect"/>
             <property name="hibernate.connection.url" value="jdbc:postgresql://localhost:5432/rota2" />
