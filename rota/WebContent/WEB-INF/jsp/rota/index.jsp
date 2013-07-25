@@ -1,8 +1,9 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="UTF-8"%>
 <html>
 	<head>
-		<title>Rota</title>
-		<meta charset="utf-8" />
+		<title>MRBUs</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">  
 	
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	
@@ -14,7 +15,10 @@
 		<script src="http://cdn.leafletjs.com/leaflet-0.6.2/leaflet.js"></script> 
 		
 		<script type="text/javascript" src="<c:url value="/js/jquery-1.10.2.min.js"/>"></script>
+		<script type="text/javascript" src="<c:url value="/js/jquery-ui/js/jquery-ui-1.10.3.custom.js"/>"></script>
+		
 		<link href="<c:url value="/css/rota.css"/>" rel="stylesheet" type="text/css"/>
+		<link href="<c:url value="/js/jquery-ui/css/custom-theme/jquery-ui-1.10.3.custom.css"/>" rel="stylesheet">
 		
 	</head>
 	<body>
@@ -22,8 +26,22 @@
 		<img id="busStopBlueImg" src="<c:url value="/images/bus-stop-blue.png"/>" style="display:none" />
 		<img id="busStopRedImg" src="<c:url value="/images/bus-stop-green.png"/>" style="display:none" />
 		<form action="">
-			<div id="map"></div>
-			<script src="js/rota.js"></script>
+		
+	<div class="ui-widget">
+	  	<label for="rotasBusca">Rotas: </label>
+	  		<input id="rotasBusca" />
+	  		<!-- 
+	  		<label>Ida</label>
+	  		<input type="radio" name="sentidoIda" value="true" checked="checked" />
+			<label>Volta</label>
+			<input type="radio" name="sentidoIda" value="false" />
+			  -->
+			<input id="exibirRotaButton" type="button" onclick="exibirRota();" value="Consultar" />
+	</div>
+		
+			
+		<div id="map"></div>
+		<script src="js/rota.js"></script>
 			
 		</form>
 	</body>

@@ -5,10 +5,10 @@ import java.util.List;
 import javax.persistence.Query;
 
 import br.com.caelum.vraptor.ioc.Component;
-import br.ufc.rota.dao.ParadaOnibusDAO;
+import br.ufc.rota.dao.ParadaDAO;
 
 @Component
-public class ParadaOnibusDAOImpl extends AbstractDAOImpl implements ParadaOnibusDAO {
+public class ParadaOnibusDAOImpl extends AbstractDAOImpl implements ParadaDAO {
 
 	@SuppressWarnings("unchecked")
 	public List<Object[]> buscarTodasParadasOnibus(){

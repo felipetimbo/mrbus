@@ -8,22 +8,27 @@ import java.util.List;
 import br.com.caelum.vraptor.Path;
 import br.com.caelum.vraptor.Resource;
 import br.com.caelum.vraptor.Result;
-import br.ufc.rota.dao.ParadaOnibusDAO;
-import br.ufc.rota.entity.ParadaOnibus;
+import br.ufc.rota.entity.Parada;
+import br.ufc.rota.entity.Rota;
+import br.ufc.rota.service.ParadaService;
+import br.ufc.rota.service.RotaService;
 
 @Resource
 public class RotaController {
 
 	private Result result;
 
-	private ParadaOnibusDAO paradaOnibusDAO;
+	private ParadaService paradaService;
+	private RotaService rotaService;
 	
-	private List<Object[]> paradasListObj;
-	private List<ParadaOnibus> paradasList;
+	private List<Parada> paradasList;
 	
-	public RotaController(Result result, ParadaOnibusDAO paradaOnibusDAO) {
+	private List<String> nomesTodasRotas;
+	
+	public RotaController(Result result, ParadaService paradaService, RotaService rotaService) {
 		this.result = result;
-		this.paradaOnibusDAO = paradaOnibusDAO;
+		this.paradaService = paradaService;
+		this.rotaService = rotaService;
 	}
 
 	@Path("/rota")
@@ -31,9 +36,54 @@ public class RotaController {
 		
 	}
 	
+	/**
+	 * Busca o nome de todas as rotas para preencher o combo de rotas
+	 */
+	public void buscarNomeTodasRotas(){
+		nomesTodasRotas = rotaService.buscarNomeTodasRotas();
+		
+		result.use(json()).from(nomesTodasRotas, "nomesTodasRotas"). serialize();
+	}
+	
+	/**
+	 * Busca a rota selecionada pelo usuario para ser desenhada no mapa
+	 * @param nomeDaRota
+	 * @throws Exception
+	 */
+	public void exibirRota(String nomeDaRota) throws Exception{
+		Rota rotaSelecionada = new Rota();
+		String codigoRota = nomeDaRota.split(" ")[0];
+			
+		List<Object[]> rotasListObjList = rotaService.buscarRotaPeloCodigo(codigoRota);
+			
+		String codigo = (String) rotasListObjList.get(0)[0];
+		String nome = (String)  rotasListObjList.get(0)[1];
+		String terminais = (String)  rotasListObjList.get(0)[2];
+		
+		/**
+		 *  Se ha mais de uma rota, entao 
+		 *  a rota selecionada sera a rota completa, em ambos os sentidos
+		 *  c.c. rota selecionada sera a rota cujo sentido existe
+		 */
+		if(rotasListObjList.size() > 1){
+			String rotaStr = rotaService.buscarLineStringRotaPeloCodigo(codigoRota);
+			rotaSelecionada = new Rota(codigo, nome, rotaStr, terminais);
+		}else{
+			boolean sentido =  (boolean) rotasListObjList.get(0)[3];
+			String rotaStr = rotaService.buscarLineStringRotaPeloCodigoESentido(codigoRota, sentido);
+			rotaSelecionada = new Rota(codigo, nome, rotaStr, terminais);
+		}
+		
+		result.use(json()).from(rotaSelecionada, "rotaSelecionada"). serialize();
+		
+	}
+	
+	/**
+	 * Busca todas as paradas de onibus contidas no banco
+	 */
 	public void buscarTodasParadas(){
-		paradasListObj = paradaOnibusDAO.buscarTodasParadasOnibus();
-		paradasList = new ArrayList<ParadaOnibus>();
+		List<Object[]> paradasListObj = paradaService.buscarTodasParadasOnibus();
+		paradasList = new ArrayList<Parada>();
 		
 		for(Object[] o : paradasListObj){
 			Long id = ((Integer) o[0]).longValue();
@@ -42,16 +92,21 @@ public class RotaController {
 			String linhasParada = (String) o[3];
 			String[] qtdLinhasStr = linhasParada.split("\\;");
 			Integer qtdLinhas = qtdLinhasStr.length;
-			ParadaOnibus parada = new ParadaOnibus(id, localizacao, pertoDe, qtdLinhas.toString(), linhasParada);
+			Parada parada = new Parada(id, localizacao, pertoDe, qtdLinhas.toString(), linhasParada);
 			paradasList.add(parada);
 		}
 		
 		result.use(json()).from(paradasList, "paradas"). serialize();
 	}
 	
+	/**
+	 * Faz a busca pelas paradas adjacentes ao ponto clicado no mapa
+	 * @param latitude
+	 * @param longitude
+	 */
 	public void buscarParadasAdjacentes(double latitude, double longitude){
-		paradasListObj = paradaOnibusDAO.buscarParadasAdjacentes(latitude, longitude);
-		paradasList = new ArrayList<ParadaOnibus>();
+		List<Object[]> paradasListObj = paradaService.buscarParadasAdjacentes(latitude, longitude);
+		paradasList = new ArrayList<Parada>();
 		
 		for(Object[] o : paradasListObj){
 			Long id = ((Integer) o[0]).longValue();
@@ -60,17 +115,11 @@ public class RotaController {
 			String linhasParada = (String) o[3];
 			String[] qtdLinhasStr = linhasParada.split("\\;");
 			Integer qtdLinhas = qtdLinhasStr.length;
-			ParadaOnibus parada = new ParadaOnibus(id, localizacao, pertoDe, qtdLinhas.toString(), linhasParada);
+			Parada parada = new Parada(id, localizacao, pertoDe, qtdLinhas.toString(), linhasParada);
 			paradasList.add(parada);
 		}
 		
 		result.use(json()).from(paradasList, "paradas"). serialize();
 	}
 	
-	public static void main(String[] args) {
-		String linhasParada = "06";
-		String[] qtdLinhasStr = linhasParada.split("\\;");
-		System.out.println(qtdLinhasStr.length);
-	}
-
 }
