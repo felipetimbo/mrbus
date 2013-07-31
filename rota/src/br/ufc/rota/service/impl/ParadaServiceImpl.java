@@ -1,4 +1,4 @@
-package br.com.rota.service.impl;
+package br.ufc.rota.service.impl;
 
 import java.util.List;
 

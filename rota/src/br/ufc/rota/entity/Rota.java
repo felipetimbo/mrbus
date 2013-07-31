@@ -6,15 +6,18 @@ public class Rota {
 	private String nome;
 	private String rota;
 	private String terminais;
+	private Double custo;
 
 	public Rota(){ }
 
-	public Rota(String codigo, String nome, String rota, String terminais) {
+	public Rota(String codigo, String nome, String rota, String terminais,
+			Double custo) {
 		super();
 		this.codigo = codigo;
 		this.nome = nome;
 		this.rota = rota;
 		this.terminais = terminais;
+		this.custo = custo;
 	}
 
 	public String getCodigo() {
@@ -49,5 +52,11 @@ public class Rota {
 		this.terminais = terminais;
 	}
 	
-	
+	public Double getCusto() {
+		return custo;
+	}
+
+	public void setCusto(Double custo) {
+		this.custo = custo;
+	}
 }

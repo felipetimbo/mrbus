@@ -10,6 +10,7 @@ import br.com.caelum.vraptor.Resource;
 import br.com.caelum.vraptor.Result;
 import br.ufc.rota.entity.Parada;
 import br.ufc.rota.entity.Rota;
+import br.ufc.rota.entity.vo.MelhorRotaVO;
 import br.ufc.rota.service.ParadaService;
 import br.ufc.rota.service.RotaService;
 
@@ -22,6 +23,7 @@ public class RotaController {
 	private RotaService rotaService;
 	
 	private List<Parada> paradasList;
+	private List<Rota> rotasList;
 	
 	private List<String> nomesTodasRotas;
 	
@@ -42,7 +44,7 @@ public class RotaController {
 	public void buscarNomeTodasRotas(){
 		nomesTodasRotas = rotaService.buscarNomeTodasRotas();
 		
-		result.use(json()).from(nomesTodasRotas, "nomesTodasRotas"). serialize();
+		result.use(json()).from(nomesTodasRotas, "nomesTodasRotas").serialize();
 	}
 	
 	/**
@@ -67,14 +69,14 @@ public class RotaController {
 		 */
 		if(rotasListObjList.size() > 1){
 			String rotaStr = rotaService.buscarLineStringRotaPeloCodigo(codigoRota);
-			rotaSelecionada = new Rota(codigo, nome, rotaStr, terminais);
+			rotaSelecionada = new Rota(codigo, nome, rotaStr, terminais, 0.0);
 		}else{
 			boolean sentido =  (boolean) rotasListObjList.get(0)[3];
 			String rotaStr = rotaService.buscarLineStringRotaPeloCodigoESentido(codigoRota, sentido);
-			rotaSelecionada = new Rota(codigo, nome, rotaStr, terminais);
+			rotaSelecionada = new Rota(codigo, nome, rotaStr, terminais, 0.0);
 		}
 		
-		result.use(json()).from(rotaSelecionada, "rotaSelecionada"). serialize();
+		result.use(json()).from(rotaSelecionada, "rotaSelecionada").serialize();
 		
 	}
 	
@@ -96,7 +98,7 @@ public class RotaController {
 			paradasList.add(parada);
 		}
 		
-		result.use(json()).from(paradasList, "paradas"). serialize();
+		result.use(json()).from(paradasList, "paradas").serialize();
 	}
 	
 	/**
@@ -119,7 +121,32 @@ public class RotaController {
 			paradasList.add(parada);
 		}
 		
-		result.use(json()).from(paradasList, "paradas"). serialize();
+		result.use(json()).from(paradasList, "paradas").serialize();
+	}
+
+	/**
+	 * Busca a melhor rota de Onibus a partir das 2 paradas escolhidas pelo usuario.
+	 * @param idA
+	 * @param latA
+	 * @param lngA
+	 * @param idB
+	 * @param latB
+	 * @param lngB
+	 */
+	public void buscarMelhorRotaOnibus(String idA, Double latA, Double lngA, String idB, Double latB, Double lngB){
+		List<MelhorRotaVO> melhoresRotas = new ArrayList<MelhorRotaVO>();
+
+		try {
+			melhoresRotas = rotaService.calcularRota(Long.parseLong(idA), latA, lngA, Long.parseLong(idB), latB, lngB);
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+			result.nothing();
+		} catch (Exception e) {
+			e.printStackTrace();
+			result.nothing();
+		}
+		
+		result.use(json()).from(melhoresRotas, "melhoresRotas").include("rota").include("origem").include("destino").serialize();
 	}
 	
 }

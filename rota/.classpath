@@ -46,5 +46,6 @@
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/hibernate-spatial-4.0-M1.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/postgis-jdbc-1.5.2.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jts-1.12.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/atrion.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

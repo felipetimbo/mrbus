@@ -16,6 +16,14 @@ L.tileLayer('http://{s}.tile.cloudmade.com/BC9A493B41014CAABB98F0471D759707/997/
  * */
 $(document).ready(function(){
 	buscarNomeTodasRotas();
+	
+	$( "#dialog" ).dialog({
+	  autoOpen: false,
+	  dialogClass: "no-close",
+      height: 140,
+      modal: true
+    });
+	
 });
 
 var rotasDisponiveis;
@@ -36,6 +44,14 @@ var paradaSelecionadaIcon = L.icon({
     popupAnchor:  [11, -30] // point from which the popup should open relative to the iconAnchor
 });
 
+var paradaFinalIcon = L.icon({
+	iconUrl: 'images/bus-stop-red.png',
+
+	iconSize:     [30, 30], // size of the icon
+    iconAnchor:   [0, 30], // point of the icon which will correspond to marker's location
+    popupAnchor:  [11, -30] // point from which the popup should open relative to the iconAnchor
+});
+
 var estiloRuas = {
     "color": "#0000ff",
     "weight": 5,
@@ -50,18 +66,33 @@ var layerGroupParadasSelecionadas;
 var paradasSelecionadasLayer = [];
 
 var nomesTodasRotas = []; // nomes de todas as linhas de onibus
-var ruaLayer = L.geoJson().addTo(map);
+var layerGroupRuas;
+var ruasLayer = [];
 var ruaFeature;
+
+var paradasSelecionadas = [];
 
 function caracteristicasPonto(feature, layer) {
 	featuresSelecionados.push(feature);
 	var popupContent = "<p><b>Id:</b> " + feature.properties.id + "<br />" +
-						"<b>Latidude:</b> " + layer._latlng.lat + "<br />" +
-						"<b>Longitude:</b> " + layer._latlng.lng + "<br />" +
-						"<b>Proximo a:</b> " + feature.properties.next_to + "<br />" +
-						"<b>Linhas da parada:</b> " + feature.properties.qtd_linhas + " linha(s) <br />" +
-						feature.properties.linhas_parada + "</p><br />" + 
-						"<input id='adicionarDestinoButton' type='button' class='btnAdd' onclick='adicionarParada("+ feature.properties.id +");' value='Adicionar' />";
+			"<b>Latidude:</b> " + layer._latlng.lat + "<br />" +
+			"<b>Longitude:</b> " + layer._latlng.lng + "<br />" +
+			"<b>Proximo a:</b> " + feature.properties.next_to + "<br />" +
+			"<b>Linhas da parada:</b> " + feature.properties.qtd_linhas + " linha(s) <br />" +
+			feature.properties.linhas_parada + "</p><br />" + 
+			"<input id='adicionarDestinoButton' type='button' class='btnAdd' onclick='adicionarParada("+ feature.properties.id +");' value='Adicionar' />";
+
+
+	if (feature.properties && feature.properties.popupContent) {
+		popupContent += feature.properties.popupContent;
+	}
+
+	layer.bindPopup(popupContent);
+}
+
+function caracteristicasRota(feature, layer) {
+	featuresSelecionados.push(feature);
+	var popupContent = "<p>" + feature.properties.percurso + "</p>";
 
 	if (feature.properties && feature.properties.popupContent) {
 		popupContent += feature.properties.popupContent;
@@ -119,7 +150,10 @@ function buscarParadasAdjacentes(lat, lng){
 			  cache: false, 
 			  data: {latitude: lat, longitude: lng},
 			  success: function(data){
-				  plotarParadaNoMapa(data);
+				  for (var x=0; x < data.paradas.length; x++) {
+					  var parada = data.paradas[x];
+					  plotarParadaNoMapa(parada, false);
+				  }
 				  layerGroupParadas = L.layerGroup(paradasLayer).addTo(map);
 			}
 				
@@ -132,7 +166,10 @@ function buscarTodasParadas(){
 		  url: 'rota/buscarTodasParadas',
 		  cache: false, 
 		  success: function(data){
-			  plotarParadaNoMapa(data);
+			  for (var x=0; x < data.paradas.length; x++) {
+				  var parada = data.paradas[x];
+				  plotarParadaNoMapa(parada, false);
+			  }
 		}
 			
 	});
@@ -159,6 +196,9 @@ function buscarNomeTodasRotas(){
 	});
 }
 
+/**
+ * desenha a rota no mapa
+ */
 function exibirRota() {
 	
 	var nomeDaRota = $("#rotasBusca")[0].value;
@@ -169,77 +209,105 @@ function exibirRota() {
 		  cache: false, 
 		  data: {nomeDaRota: nomeDaRota},
 		  success: function(data){
-			  var rotaSelecionada = data.rotaSelecionada;
-			  
-			  geo = new Object();
-		      geo = eval("("+rotaSelecionada.rota+")");
-		    
-		      //troca as coordenadas, BUG do GeoJson
-		      for(var i=0; i < geo.coordinates.length; i++){
-		    	  coordenadas = geo.coordinates[i];
-		    	  
-		    	  var aux = coordenadas[0];
-		    	  coordenadas[0] = coordenadas[1];
-		    	  coordenadas[1] = aux;
-		      }
-		      
-		      if(typeof(ruaFeature) != "undefined"){
-		    	  ruaLayer.clearLayers();
-			  }
-		      
-		      ruaFeature = {
-			    "type": "Feature",
-			    "properties": {
-			    	"id": rotaSelecionada.codigo,
-			        "nome": rotaSelecionada.nome,
-			        "terminais": rotaSelecionada.terminais
-			    },
-			    "geometry": geo
-			  };
-		      
-		      ruaLayer.addData(ruaFeature);
-		      
-//		    var elementLayer = L.geoJson(geojsonFeature, {
-//		    	style: estiloRuas
-//		    });
-//		    
-//		    if(typeof(layerGroupRuas) != "undefined"){
-//		    	layerGroupRuas.clearLayers();
-//			}
-//		    
-//		    ruaLayer = [];
-//		    ruaLayer.push(elementLayer);
-//			 
-//			layerGroupRuas = L.layerGroup(ruaLayer).addTo(map);   
-		      
+			 var rotaSelecionada = data.rotaSelecionada;
+			 plotarRotaNoMapa(rotaSelecionada, true, "");
+			 layerGroupRuas = L.layerGroup(ruasLayer).addTo(map);
 		},error: function(){
-		    alert('error!');
+		    alert('Ocorreu um problema com a solicitacao, contacte o administrador!');
 	    }
 			
 	});
 
 }
 
-function plotarParadaNoMapa(data){
-	 for (var x=0; x < data.paradas.length; x++) {
-		  var parada = data.paradas[x];
-		  
-		  geo = new Object();
-		  geo = eval("("+parada.localizacao+")");
-		  
-		  var geojsonFeature = {
-				    "type": "Feature",
-				    "properties": {
-				    	"id": parada.id.toString(),
-				        "next_to": parada.pertoDe,
-				        "qtd_linhas": parada.qtdLinhas,
-				        "linhas_parada": parada.linhasParada
-				    },
-				    "geometry": geo
-				    
-				};
-		  
-		  var elementLayer = L.geoJson(geojsonFeature, {
+function limparTela() {
+	$('[name="rotasBusca"]').val('');
+	if(typeof(layerGroupRuas) != "undefined"){
+		layerGroupRuas.clearLayers();
+	}
+	if(typeof(layerGroupParadas) != "undefined"){
+		layerGroupParadas.clearLayers();
+	}
+	if(typeof(layerGroupParadasSelecionadas) != "undefined"){
+		layerGroupParadasSelecionadas.clearLayers();
+	}
+	paradasSelecionadas = [];
+	paradasSelecionadasLayer = [];
+	ruasLayer = [];
+}
+
+function buscarRota(){
+	
+	$( "#dialog" ).dialog( "open" );
+	
+	var pontoA = paradasSelecionadas[0];
+	var idA = pontoA.properties.id;
+	var latA = pontoA.geometry.coordinates[0];
+	var lngA = pontoA.geometry.coordinates[1];
+	
+	var pontoB = paradasSelecionadas[1];
+	var idB = pontoB.properties.id;
+	var latB = pontoB.geometry.coordinates[0];
+	var lngB = pontoB.geometry.coordinates[1];
+	
+	$.ajax({
+		  url: 'rota/buscarMelhorRotaOnibus',
+		  cache: false, 
+		  data: {idA: idA, latA: latA, lngA: lngA, idB: idB, latB: latB, lngB: lngB},
+		  success: function(data){
+			  $( "#dialog" ).dialog( "close" );
+			  limparTela();
+			  
+			  if(data.melhoresRotas.length != 0){
+				  for (var x=0; x < data.melhoresRotas.length; x++) {
+					  var melhorRota = data.melhoresRotas[x];
+					  if(x==0){
+						  plotarParadaNoMapa(melhorRota.origem, true);
+					  }
+					  
+					  plotarRotaNoMapa(melhorRota.rota, false, melhorRota.melhorRotaStr);
+					  plotarParadaNoMapa(melhorRota.destino, true);
+					  
+				  }
+				  
+				  layerGroupParadas = L.layerGroup(paradasLayer).addTo(map);
+				  layerGroupRuas = L.layerGroup(ruasLayer).addTo(map);
+			  }else{
+				  alert('Voce deve utilizar um terminal de integracao.');
+			  }
+			  
+			  
+			  
+			 
+		},error: function(){
+			$( "#dialog" ).dialog( "close" );
+		    alert('Ocorreu um problema com a solicitacao, contacte o administrador!');
+	    }
+			
+	});
+}
+
+function plotarParadaNoMapa(parada, ehParadaFinal){
+	
+	  geo = new Object();
+	  geo = eval("("+parada.localizacao+")");
+	  
+	  var geojsonFeature = {
+			    "type": "Feature",
+			    "properties": {
+			    	"id": parada.id.toString(),
+			        "next_to": parada.pertoDe,
+			        "qtd_linhas": parada.qtdLinhas,
+			        "linhas_parada": parada.linhasParada
+			    },
+			    "geometry": geo
+			    
+			};
+	  
+	  var elementLayer;
+	  
+	  if(!ehParadaFinal){
+		  elementLayer = L.geoJson(geojsonFeature, {
 				 pointToLayer: function (feature, latlng) {
 					 	var coord = [latlng.lat, latlng.lng]; 
 					    var lnglat = L.GeoJSON.coordsToLatLng(coord, false);
@@ -247,11 +315,66 @@ function plotarParadaNoMapa(data){
 				    },
 				    onEachFeature: caracteristicasPonto
 			});
-		  
-		  paradasLayer.push(elementLayer);
+	  }else{
+		  elementLayer = L.geoJson(geojsonFeature, {
+				 pointToLayer: function (feature, latlng) {
+					 	var coord = [latlng.lat, latlng.lng]; 
+					    var lnglat = L.GeoJSON.coordsToLatLng(coord, false);
+				        return L.marker(lnglat, {icon: paradaFinalIcon}, geojsonMarkerOptions);
+				    },
+				    onEachFeature: caracteristicasPontoSelecionado
+			});
 	  }
+	  
+	  
+	  paradasLayer.push(elementLayer);
 }
 
+function plotarRotaNoMapa(rotaSelecionada, plotarApenasUmaRota, percurso){
+	
+	geo = new Object();
+	geo = eval("("+rotaSelecionada.rota+")");
+	
+	//troca as coordenadas, BUG do GeoJson
+	for(var i=0; i < geo.coordinates.length; i++){
+		  coordenadas = geo.coordinates[i];
+		  
+		  var aux = coordenadas[0];
+		  coordenadas[0] = coordenadas[1];
+		  coordenadas[1] = aux;
+	}
+	
+	// se quisermos plotar mais de uma rota, nao precisa limpar as outras rotas no mapa
+	if(plotarApenasUmaRota){
+		if(typeof(ruaFeature) != "undefined"){
+			  layerGroupRuas.clearLayers();
+		}
+	}
+	
+	
+	ruaFeature = {
+	  "type": "Feature",
+	  "properties": {
+	  	"id": rotaSelecionada.codigo,
+	     "nome": rotaSelecionada.nome,
+	     "terminais": rotaSelecionada.terminais,
+	     "tempo" : rotaSelecionada.custo,
+	     "percurso" : percurso
+	  },
+	  "geometry": geo
+	};
+	
+	var elementLayer = L.geoJson(ruaFeature, {
+		    onEachFeature: caracteristicasRota
+	});
+	
+	ruasLayer.push(elementLayer);
+}
+
+/**
+ * Adiciona uma parada de onibus como ponto de interesse do usuario
+ * @param id
+ */
 function adicionarParada(id){
 	
 	var featureSelecionado = new Object();
@@ -266,6 +389,8 @@ function adicionarParada(id){
 	
 	layerGroupParadas.clearLayers();
 	paradasLayer = [];
+	
+	paradasSelecionadas.push(featureSelecionado);
 	
 	 var elementLayer = L.geoJson(featureSelecionado, {
 		 pointToLayer: function (feature, latlng) {

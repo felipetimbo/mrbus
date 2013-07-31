@@ -1,6 +1,12 @@
 #map{ 
-	width: 800px;
-	height: 500px;
+	width: 100%;
+	height: 550px;
+}
+
+#buscarMelhorRotaButton{
+	position:absolute; 
+	right:0px;
+	margin: 0 6px 0 0;
 }
 
 .btnAdd{
@@ -26,5 +32,10 @@
 	cursor:pointer;
 	position:relative;
 	top:2px;
+}
+
+/*ocultar o botao close dos Popups*/
+.no-close .ui-dialog-titlebar-close {
+  display: none;
 }
 

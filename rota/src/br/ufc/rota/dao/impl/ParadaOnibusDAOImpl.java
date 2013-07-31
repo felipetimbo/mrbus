@@ -27,5 +27,22 @@ public class ParadaOnibusDAOImpl extends AbstractDAOImpl implements ParadaDAO {
 		
 		return query.getResultList();
 	}
+
+	@Override
+	public Object[] buscarLatLngParada(Integer parada) {
+		Query query = em.createNativeQuery("SELECT ST_X(CAST(p.coord_desc AS geometry)), ST_Y(CAST(p.coord_desc AS geometry))" +
+									" FROM point_stops p WHERE p.id = " + parada);
+		
+		return (Object[]) query.getSingleResult();
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<Object[]> buscarParadaPeloId(Long idParada) {
+		Query query = em.createNativeQuery("select p.id, st_asgeojson(p.coord_desc), p.next_to, p.route_point " +
+				"from point_stops p where p.id = " + idParada);
+		
+		return query.getResultList();
+	}
 	
 }

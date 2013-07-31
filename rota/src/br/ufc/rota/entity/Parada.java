@@ -8,6 +8,8 @@ public class Parada {
 	private String qtdLinhas;
 	private String linhasParada;
 
+	public Parada(){}
+	
 	public Parada(Long id, String localizacao, String pertoDe,
 			String qtdLinhas, String linhasParada) {
 		super();

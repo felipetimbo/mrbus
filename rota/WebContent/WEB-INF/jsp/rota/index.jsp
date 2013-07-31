@@ -25,24 +25,31 @@
 		<img src="<c:url value="/images/mrbus_mini_logo.png"/>" /> 
 		<img id="busStopBlueImg" src="<c:url value="/images/bus-stop-blue.png"/>" style="display:none" />
 		<img id="busStopRedImg" src="<c:url value="/images/bus-stop-green.png"/>" style="display:none" />
+		<img id="busStopRedImg" src="<c:url value="/images/bus-stop-red.png"/>" style="display:none" />
 		<form action="">
 		
-	<div class="ui-widget">
-	  	<label for="rotasBusca">Rotas: </label>
-	  		<input id="rotasBusca" />
-	  		<!-- 
-	  		<label>Ida</label>
-	  		<input type="radio" name="sentidoIda" value="true" checked="checked" />
-			<label>Volta</label>
-			<input type="radio" name="sentidoIda" value="false" />
-			  -->
-			<input id="exibirRotaButton" type="button" onclick="exibirRota();" value="Consultar" />
-	</div>
-		
+		<div class="ui-widget">
+		  	<label for="rotasBusca">Rotas: </label>
+		  		<input id="rotasBusca" name="rotasBusca" />
+		  		<!-- 
+		  		<label>Ida</label>
+		  		<input type="radio" name="sentidoIda" value="true" checked="checked" />
+				<label>Volta</label>
+				<input type="radio" name="sentidoIda" value="false" />
+				  -->
+				<input id="exibirRotaButton" type="button" onclick="exibirRota();" value="Consultar" />
+				<input id="limparTelaButton" type="button" onclick="limparTela();" value="Limpar" />
+				<input id="buscarMelhorRotaButton" type="button" onclick="buscarRota();" value="Recomendar Rota" />
+		</div>
 			
 		<div id="map"></div>
 		<script src="js/rota.js"></script>
-			
+		
+		<div id="dialog" title="Aguarde...">
+		  <img id="busStopBlueImg" src="<c:url value="/images/loading.gif"/>" align="middle" style="padding: 0 12px 0 0;"/>
+		  Buscando Melhor Rota
+		</div>
+		
 		</form>
 	</body>
 </html>
